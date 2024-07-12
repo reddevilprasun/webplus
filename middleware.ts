@@ -6,7 +6,14 @@ import {
   publicRoutes
 } from '@/routes'
 
-export async function auth(req: any) {
+import { NextResponse } from 'next/server';
+
+import NextAuth from 'next-auth';
+import  {authConfig}  from './auth.config';
+
+const {auth} = NextAuth(authConfig);
+
+export default auth((req) => {
   const {nextUrl} = req;
   const isLoggedIn = !!req.auth;
   console.log("log in status: ", isLoggedIn);
@@ -16,26 +23,24 @@ export async function auth(req: any) {
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
   if(isApiAuthRoute){
-    return null;
+    return NextResponse.next();
   }
 
   if(isAuthRoute){
     if(isLoggedIn){
-      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+      return NextResponse.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
     }
-    return null;
+    return NextResponse.next();
   }
 
   if(!isLoggedIn && !isPublicRoute){
     return Response.redirect(new URL("/sign-in", nextUrl))
   }
 
-  return null;
+  return NextResponse.next();
 
-}
+})
 
-// Export the `auth` function as `middleware`
-export { auth as middleware } ;
 
 export const config = {
   matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],

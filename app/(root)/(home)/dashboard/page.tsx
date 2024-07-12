@@ -1,4 +1,5 @@
-import { auth } from '@/auth';
+import { auth, signOut } from '@/auth';
+import { Button } from '@nextui-org/react';
 import React from 'react'
 
 const Dashboardpage = async() => {
@@ -6,6 +7,17 @@ const Dashboardpage = async() => {
   return (
     <div>
       Your Session: {JSON.stringify(session)}
+      <form action={
+        async () => {
+          "use server"
+          signOut();
+        }
+      }>
+
+        <Button type='submit'>
+          Sign out
+        </Button>
+      </form>
     </div>
   )
 }
