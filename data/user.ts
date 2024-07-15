@@ -9,7 +9,6 @@ export const getUserByNumber = async (number:string) => {
     return user;
     
   } catch (error:any) {
-    console.log(error);
     return null;
   }
 }
@@ -17,12 +16,20 @@ export const getUserByNumber = async (number:string) => {
 export const getUserById = async (_id:string) => {
   try {
     await dbConnect();
-    console.log("ID: ", _id)
     const user = await User.findById(_id);
     return user;
     
   } catch (error:any) {
-    console.log(error);
+    return null;
+  }
+}
+
+export const getUserByEmail = async (email:string | null | undefined) => {
+  try {
+    await dbConnect();
+    const user = await User.findOne({email});
+    return user;
+  } catch (error:any) {
     return null;
   }
 }

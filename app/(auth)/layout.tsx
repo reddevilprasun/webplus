@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
-import Image from 'next/image'
 import React, { ReactNode } from 'react'
-import { BackgroundGradientAnimation } from './components/ui/greedientbackground';
+import { Vortex } from './components/ui/vortex';
 
 
 export const metadata: Metadata = {
@@ -13,11 +12,12 @@ export const metadata: Metadata = {
 };
 const Authlayout = ({children}: {children: ReactNode}) => {
   return (
-    <BackgroundGradientAnimation>
-      <div className="absolute z-50 inset-0 flex items-center justify-center">
+    <Vortex
+        backgroundColor="black"
+        className="flex items-center justify-center w-full h-full"
+      >
         {children}
-      </div>
-    </BackgroundGradientAnimation>
+    </Vortex>
   )
 }
 

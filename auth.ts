@@ -1,15 +1,17 @@
-
-import NextAuth, { DefaultSession} from "next-auth"
+import NextAuth, { AuthError, DefaultSession } from "next-auth"
 import { JWT } from "next-auth/jwt"
 import Credentials from "next-auth/providers/credentials"
 import github from "next-auth/providers/github"
 import { LoginSchema } from "./schema"
-import { getUserById, getUserByNumber } from "./data/user"
-import { MongoDBAdapter } from "@auth/mongodb-adapter"
+import { getUserByEmail, getUserById, getUserByNumber } from "./data/user"
 
 import bcrypt from "bcryptjs"
-import clientPromise from "./lib/db"
 import { authConfig } from "./auth.config"
+import google from "next-auth/providers/google"
+import dbConnect from "./lib/mongoose"
+import User from "./models/User"
+import { NextResponse } from "next/server"
+import facebook from "next-auth/providers/facebook"
 
 
 // Extend the default User type with the role property
@@ -19,29 +21,42 @@ declare module "next-auth" {
     user: {
       id: string
       role: string
-      number:string
-      image:string
+      number: string
+      image: string
     } & DefaultSession["user"]
   }
   interface User {
-    _id:string
+    _id: string
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     role: string
-    number:string
-    image:string
+    number: string
+    image: string
   }
 }
 
 
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  //adapter: MongoDBAdapter(clientPromise),
   ...authConfig,
   providers: [
+    //Login user using OAuth
+    google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    github({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET
+    }),
+    facebook({
+      clientId: process.env.FACEBOOK_CLIENT_ID,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET
+    }),
+    // Login User using only credentials
     Credentials({
       credentials: {
         number: { type: "string" },
@@ -74,15 +89,56 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
     })
   ],
+  pages: {
+    signIn: "/sign-in",
+    error: "/sign-in"
+  },
   callbacks: {
-    // async signIn({user}){
-    //   const existingUser = await getUserById(user._id);
-    //   if(!existingUser || !existingUser.numberVerified){
-    //     return false;
-    //   }
-    //   return true;
-    // },
-    
+    //For Sign In Conditions
+    signIn: async ({ user, account, profile }) => {
+      // To save the OAuth login user in the data base
+      if (account?.provider === "google" || account?.provider === "github") {
+        try {
+          let existingUser = await getUserByEmail(profile?.email);
+          console.log("User:", existingUser)
+          if (existingUser) {
+            if (existingUser.provider !== account.provider) {
+              return false;
+            }
+          }
+          if (!existingUser) {
+            // Create a new user
+            existingUser = new User({
+              firstName: profile?.given_name,
+              lastName: profile?.family_name,
+              email: profile?.email,
+              password: "",
+              role: "USER",
+              image: profile?.picture,
+              provider: account.provider,
+            });
+            await existingUser.save();
+          }
+
+          return true;
+        } catch (error: any) {
+          console.log(error.message);
+          throw new AuthError("Error while creating user")
+        }
+
+      }
+      if (account?.provider === "credentials") {
+        const existingUser = await getUserById(user._id!)
+        console.log("Credincial call:", existingUser);
+        // Prevent sign in without email verification
+        if (!existingUser?.numberVerified) return false;
+      }
+
+      return true;
+
+    },
+
+    //Extends the session of user using some more information
     async session({ session, token }) {
       if (token.sub && session.user) {
         session.user.id = token.sub;
@@ -90,19 +146,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token.role && session.user) {
         session.user.role = token.role;
       }
-      if(token.number && session.user){
+      if (token.number && session.user) {
         session.user.number = token.number;
       }
-      if(token.image && session.user){
+      if (token.image && session.user) {
         session.user.image = token.image;
       }
-      if(token.name && session.user){
+      if (token.name && session.user) {
         session.user.name = token.name;
       }
       return session;
     },
+    // setUp the session token
     async jwt({ token, user }) {
-      if(user){
+      console.log("Token:", token)
+      if (user) {
         token.sub = user._id;
       }
       if (!token.sub) return token;

@@ -9,15 +9,17 @@ interface IUser extends Document {
   id: string;
   firstName: string;
   lastName: string;
-  number : string;
+  number: string;
+  email: string;
   numberVerified?: Date;
   image?: string;
   password: string;
   role: UserRole;
-  accounts: Types.ObjectId[];
+  accounts: Types.ObjectId;
   isTwoFactorEnabled: boolean;
   twoFactorConfirmation?: Types.ObjectId;
-} 
+  provider:string,
+}
 
 const userSchema = new Schema<IUser>({
   id: {
@@ -29,7 +31,10 @@ const userSchema = new Schema<IUser>({
   number: {
     type: String,
     unique: true,
-    required: true,
+  },
+  email: {
+    type: String,
+    unique: true,
   },
   numberVerified: Date,
   image: String,
@@ -39,10 +44,13 @@ const userSchema = new Schema<IUser>({
     enum: UserRole,
     default: UserRole.USER,
   },
-  accounts: [{
+  provider:{
+    type:String,
+  },
+  accounts: {
     type: Schema.Types.ObjectId,
     ref: 'Account',
-  }],
+  },
   isTwoFactorEnabled: {
     type: Boolean,
     default: false,
