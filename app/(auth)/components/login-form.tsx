@@ -221,7 +221,7 @@ const LogInForm = () => {
                 <div className="text-sm">
                   <Link
                     className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-500 dark:hover:text-blue-400"
-                    href="#"
+                    href="/forget-password"
                   >
                     Forgot your password?
                   </Link>
