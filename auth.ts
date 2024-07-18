@@ -116,6 +116,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               role: "USER",
               image: profile?.picture,
               provider: account.provider,
+              number:account.provider,
             });
             await existingUser.save();
           }

@@ -5,7 +5,7 @@ import { Vortex } from './components/ui/vortex';
 
 export const metadata: Metadata = {
   title: "Webplus+",
-  description: "Webplus",
+  description: "Website security organization",
   icons: {
     icon: '/icons/symbol.png'
   }

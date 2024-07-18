@@ -18,7 +18,7 @@ interface IUser extends Document {
   accounts: Types.ObjectId;
   isTwoFactorEnabled: boolean;
   twoFactorConfirmation?: Types.ObjectId;
-  provider:string,
+  provider: string,
 }
 
 const userSchema = new Schema<IUser>({
@@ -29,8 +29,7 @@ const userSchema = new Schema<IUser>({
   firstName: String,
   lastName: String,
   number: {
-    type: String,
-    unique: true,
+    type: String, unique: false, sparse: true
   },
   email: {
     type: String,
@@ -44,8 +43,8 @@ const userSchema = new Schema<IUser>({
     enum: UserRole,
     default: UserRole.USER,
   },
-  provider:{
-    type:String,
+  provider: {
+    type: String,
   },
   accounts: {
     type: Schema.Types.ObjectId,

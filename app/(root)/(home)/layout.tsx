@@ -3,10 +3,10 @@ import { Metadata } from 'next';
 import React, { ReactNode } from 'react'
 
 export const metadata: Metadata = {
-  title: "Hostel & PG",
-  description: "Hostel & PG",
+  title: "Webplus+",
+  description: "Website security organization",
   icons: {
-    icon: '/icons/logo.svg'
+    icon: '/icons/symbol.png'
   }
 };
 
