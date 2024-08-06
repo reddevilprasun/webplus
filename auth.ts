@@ -8,9 +8,7 @@ import { getUserByEmail, getUserById, getUserByNumber } from "./data/user"
 import bcrypt from "bcryptjs"
 import { authConfig } from "./auth.config"
 import google from "next-auth/providers/google"
-import dbConnect from "./lib/mongoose"
 import User from "./models/User"
-import { NextResponse } from "next/server"
 import facebook from "next-auth/providers/facebook"
 
 
@@ -23,6 +21,8 @@ declare module "next-auth" {
       role: string
       number: string
       image: string
+      name:string
+      email:string
     } & DefaultSession["user"]
   }
   interface User {
@@ -67,10 +67,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (validatedFields.success) {
 
           const { number, password } = validatedFields.data;
-          console.log(validatedFields.data);
 
           const user = await getUserByNumber(number);
-          console.log(user);
           if (!user || !user.password) {
             return null;
           }
@@ -100,7 +98,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (account?.provider === "google" || account?.provider === "github") {
         try {
           let existingUser = await getUserByEmail(profile?.email);
-          console.log("User:", existingUser)
           if (existingUser) {
             if (existingUser.provider !== account.provider) {
               return false;
@@ -123,14 +120,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           return true;
         } catch (error: any) {
-          console.log(error.message);
           throw new AuthError("Error while creating user")
         }
 
       }
       if (account?.provider === "credentials") {
         const existingUser = await getUserById(user._id!)
-        console.log("Credincial call:", existingUser);
         // Prevent sign in without email verification
         if (!existingUser?.numberVerified) return false;
       }
@@ -160,14 +155,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     // setUp the session token
     async jwt({ token, user }) {
-      console.log("Token:", token)
       if (user) {
         token.sub = user._id;
       }
       if (!token.sub) return token;
-      console.log({ token })
       const existingUser = await getUserById(token.sub);
-      console.log("USER:", existingUser)
       if (!existingUser) return token;
       token.role = existingUser.role;
       token.number = existingUser.number;

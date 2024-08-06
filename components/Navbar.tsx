@@ -1,5 +1,4 @@
 "use client";
-import { useCurrentUser } from '@/hooks/user-data';
 import {
   Button,
   Dropdown,
@@ -13,12 +12,22 @@ import {
   User
 } from '@nextui-org/react';
 import { LogOut } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+type User = {
+  id?: string;
+  role?:string;
+  number?:string;
+  image?:string;
+  name?:string;
+  email?:string;
+}
+
 export default function NavBar() {
-  const user = useCurrentUser();
+  const { data: session } = useSession();
+  const user = session?.user;
   const logout = async()=> {
     await signOut();
   }
@@ -32,12 +41,9 @@ export default function NavBar() {
           height={200}
           alt="Logo"
         />
-        {/* <p className="font-bold text-inherit pl-2">
-        </p> */}
       </NavbarBrand>
       <NavbarContent className="hidden sm:flex gap-9" justify="center">
         <NavbarItem >Home</NavbarItem>
-        <NavbarItem >Rooms</NavbarItem>
         <NavbarItem>Services</NavbarItem>
         <NavbarItem >About</NavbarItem>
         <NavbarItem >Contact</NavbarItem>

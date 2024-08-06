@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ant-design/plots": "^1.2.5",
     "@auth/mongodb-adapter": "^3.4.1",
     "@hookform/resolvers": "^3.9.0",
     "@nextui-org/react": "^2.3.5",
@@ -18,6 +19,7 @@
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "formidable": "^3.5.1",
     "framer-motion": "^11.2.13",
     "lucide-react": "^0.378.0",
     "mini-svg-data-uri": "^1.4.4",
@@ -25,6 +27,7 @@
     "next": "14.2.2",
     "next-auth": "^5.0.0-beta.19",
     "react": "^18",
+    "react-apexcharts": "^1.4.1",
     "react-dom": "^18",
     "react-hook-form": "^7.52.1",
     "react-icons": "^5.1.0",
@@ -37,6 +40,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/formidable": "^3.4.5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

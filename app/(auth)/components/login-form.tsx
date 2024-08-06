@@ -59,7 +59,6 @@ const LogInForm = () => {
 
   const onSubmit = (values: z.infer<typeof LoginSchema>) => {
     startTransition(() => {
-      console.log("Values:", values);
       login(values)
         .then((data) => {
           if (data?.success) {
