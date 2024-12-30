@@ -1,47 +1,33 @@
-
 import {
   DEFAULT_LOGIN_REDIRECT,
-  apiAuthPrefix,
-  authRoutes,
   publicRoutes
 } from '@/routes'
 
-import { NextResponse } from 'next/server';
+import {
+  convexAuthNextjsMiddleware,
+  createRouteMatcher,
+  nextjsMiddlewareRedirect,
+  isAuthenticatedNextjs
+} from "@convex-dev/auth/nextjs/server";
 
-import NextAuth from 'next-auth';
-import  {authConfig}  from './auth.config';
+const isPublicRoute = createRouteMatcher(publicRoutes);
+const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+]);
 
-const {auth} = NextAuth(authConfig);
-
-export default auth((req) => {
-  const {nextUrl} = req;
-  const isLoggedIn = !!req.auth;
-  console.log("log in status: ", isLoggedIn);
-
-  const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
-  const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
-  const isAuthRoute = authRoutes.includes(nextUrl.pathname);
-
-  if(isApiAuthRoute){
-    return NextResponse.next();
+export default convexAuthNextjsMiddleware(async(request, {convexAuth}) => {
+  if(isPublicRoute(request) && await isAuthenticatedNextjs()) {
+    return nextjsMiddlewareRedirect(request,"/dashboard");
   }
-
-  if(isAuthRoute){
-    if(isLoggedIn){
-      return NextResponse.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
-    }
-    return NextResponse.next();
+  if(isProtectedRoute(request) && !(await isAuthenticatedNextjs())) {
+    return nextjsMiddlewareRedirect(request,"/sign-up");
   }
-
-  if(!isLoggedIn && !isPublicRoute){
-    return Response.redirect(new URL("/sign-in", nextUrl))
-  }
-
-  return NextResponse.next();
-
 })
 
 
+
 export const config = {
-  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+  // The following matcher runs middleware on all routes
+  // except static assets.
+  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
 };

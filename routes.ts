@@ -6,7 +6,12 @@
 export const publicRoutes = [
   "/",
   "/new-verification",
-  "/forget-password"
+  "/forget-password",
+  "/sign-in",
+  "/sign-up",
+  "/error",
+  "/reset",
+  "/new-password"
 ];
 
 /**

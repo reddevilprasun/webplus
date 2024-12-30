@@ -1,4 +1,6 @@
 "use client";
+import { useCurrentUser } from '@/app/(auth)/features/auth/api/user-current';
+import { useAuthActions } from '@convex-dev/auth/react';
 import {
   Button,
   Dropdown,
@@ -11,10 +13,10 @@ import {
   NavbarItem,
   User
 } from '@nextui-org/react';
-import { LogOut } from 'lucide-react';
-import { signOut, useSession } from 'next-auth/react';
+import { Loader, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type User = {
   id?: string;
@@ -26,11 +28,9 @@ type User = {
 }
 
 export default function NavBar() {
-  const { data: session } = useSession();
-  const user = session?.user;
-  const logout = async()=> {
-    await signOut();
-  }
+  const router = useRouter();
+  const { data, isLoading} = useCurrentUser();
+  const { signOut } = useAuthActions();
 
   return (
     <Navbar>
@@ -49,16 +49,16 @@ export default function NavBar() {
         <NavbarItem >Contact</NavbarItem>
       </NavbarContent>
       <NavbarContent justify='end'>
-        {!user && (
+        {!data && (
           <NavbarItem>
             <Button>
-              <Link href={"/sign-in"}>
-                Sign IN
+              <Link href={"/sign-up"}>
+                Sign Up
               </Link>
             </Button>
           </NavbarItem>
         )}
-        {user && (
+        {data && (
           <NavbarItem>
             <Dropdown placement="bottom-start">
               <DropdownTrigger>
@@ -66,17 +66,17 @@ export default function NavBar() {
                   as="button"
                   avatarProps={{
                     isBordered: true,
-                    src: user?.image,
+                    src: data.image,
                   }}
                   className="transition-transform"
-                  description={user?.email || user?.number}
-                  name={user.name}
+                  description={data.email}
+                  name={data.firstName + " " + data.lastName}
                 />
               </DropdownTrigger>
               <DropdownMenu aria-label="User Actions" variant="flat">
                 <DropdownItem key="profile" className="h-14 gap-2">
                   <p className="font-bold">Signed in as</p>
-                  <p className="font-bold">{user?.email || user?.number}</p>
+                  <p className="font-bold">{data.email}</p>
                 </DropdownItem>
                 <DropdownItem key="settings">
                   My Settings
@@ -91,7 +91,7 @@ export default function NavBar() {
                   Help & Feedback
                 </DropdownItem>
                 <DropdownItem startContent={<LogOut />} className={"text-danger"} key="logout" color="danger">
-                  <button onClick={logout}>Logout</button>
+                  <button onClick={() => signOut()}>Logout</button>
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>

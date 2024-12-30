@@ -108,10 +108,9 @@ const Upload = () => {
           </form>
         </CardContent>
       </Card>
-      {/* <Button size="lg" onClick={()=>onClick()} >Reload</Button> */}
-      {reportData && (
+      {/* {reportData && (
         <ReportPage reportData={reportData} />
-      )}
+      )} */}
     </div>
   );
 };
