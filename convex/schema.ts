@@ -1,7 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
- 
+
 const schema = defineSchema({
   ...authTables,
   users: defineTable({
@@ -16,6 +16,32 @@ const schema = defineSchema({
     userRole: v.union(v.literal("admin"), v.literal("user")),
     // other "users" fields...
   }).index("email", ["email"]),
+  report: defineTable({
+    userId: v.id("users"),
+    totalRequests: v.number(),
+    uniqueIps: v.number(),
+    statusCodeDistribution: v.record(v.string(), v.number()),
+    requestMethodDistribution: v.record(v.string(), v.number()),
+    hourlyRequestDistribution: v.record(v.string(), v.number()),
+    hourlyMethodDistribution: v.record(
+      v.string(),
+      v.record(v.string(), v.number())
+    ),
+    topRequestedUrls: v.record(v.string(), v.number()),
+    requestsPerIp: v.record(v.string(), v.number()),
+    anomalies: v.number(),
+  }).index("by_userId", ["userId"]),
+  anomalyDetails: defineTable({
+    reportId: v.id("report"),
+    ip: v.optional(v.string()),
+    datetime: v.optional(v.string()),
+    method: v.optional(v.string()),
+    url: v.optional(v.string()),
+    status: v.optional(v.number()),
+    size: v.optional(v.number()),
+    referrer: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+  }).index("by_reportId", ["reportId"]),
 });
- 
+
 export default schema;

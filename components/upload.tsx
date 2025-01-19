@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { UploadIcon } from 'lucide-react';
 import { Button } from '@nextui-org/react';
 import { toast } from 'sonner';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 type ReportData = {
   total_requests: number;
@@ -24,6 +26,9 @@ const Upload = () => {
   const [reportId, setReportId] = useState<string | null>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fileContent, setFileContent] = useState<string>("");
+
+  const analyzeLogFile = useMutation(api.logAnalyze.logAnalyze)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -34,43 +39,34 @@ const Upload = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    // const target = e.target as HTMLInputElement;
+    // const file = target?.files?.[0];
+    if (!file) {
+      toast.error('Please select a file');
+      return;
+    }
 
     setLoading(true);
 
-    const formData = new FormData();
-    formData.append('logfile', file);
-
-    try {
-      const response = await axios.post('/api/upload-log', formData);
-      if(!response.data.success){
-        toast.error(response.data.message);
-        return;
+    const reader = new FileReader();
+    
+    reader.onload = async (e: ProgressEvent<FileReader>) => {
+      const fileContent = e.target?.result as string;
+      setFileContent(fileContent);
+      
+      try {
+        // Call the mutation to process the log file
+        const reportData = await analyzeLogFile({ log: fileContent });
+        setReportId(reportData);  // Set report to display it
+      } catch (error) {
+        toast.error('Error analyzing the log file');
+      } finally {
+        setLoading(false);
       }
-      if(response.data.success){
-        toast.success(response.data.message);
-      }
-      const  path  = await response.data.path;
-      const response2 = await axios.post('/api/generate-report', {filePath: path});
-      if(!response2.data.success){
-        toast.error(response2.data.message);
-        return;
-      }
-      if(response2.data.success){
-        toast.success(response2.data.message);
-      }
-      const reportId = await response2.data.reportId;
-      setReportId(reportId);
-
-      //Fetch the report data
-      const reportResponse = await axios.get(`/api/get-report?reportId=${reportId}`);
-      setReportData(reportResponse.data.report);
-      console.log(reportResponse.data.report);
-    } catch (error) {
-      console.error('An error occurred:', error);
-    } finally {
-      setLoading(false);
-    }
+    };
+    
+    reader.readAsText(file);
+    
   };
   // for testing purpose only 
   // const onClick = async() => {
@@ -90,7 +86,7 @@ const Upload = () => {
             <div className="flex flex-col items-center justify-center space-y-4 py-20">
               <UploadIcon className="h-8 w-8 text-muted-foreground" />
               <p className="text-muted-foreground">Drag and drop your log files here or click to select files.</p>
-              <input type="file" onChange={handleFileChange} className="hidden" id="file-upload" />
+              <input type="file" onChange={handleFileChange} className="hidden" id="file-upload" accept='.log' />
               <label htmlFor="file-upload" className="cursor-pointer bg-blue-500 text-white py-2 px-4 rounded">
                 Select File
               </label>
