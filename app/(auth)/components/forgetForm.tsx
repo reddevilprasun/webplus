@@ -34,7 +34,6 @@ const ForgetForm = ({ handleCancel, handleCodeSent }: ForgetFormProps) => {
   const onSubmitForget = async (values: ForgetFormDataProps) => {
     try {
       setSubmitting(true);
-      console.log(values);
       await signIn("password-code", {
         email: values.email,
         flow: "reset",

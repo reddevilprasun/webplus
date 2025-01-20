@@ -21,6 +21,11 @@ import { ChevronDownIcon, SearchIcon } from "lucide-react";
 import { RangeValue } from "@react-types/shared";
 import { DateValue } from "@react-types/datepicker";
 import { parseDate, getLocalTimeZone } from "@internationalized/date";
+import { Doc, Id } from "@/convex/_generated/dataModel";
+
+type AnomalyDetail = Doc<"anomalyDetails">;
+import { usePaginatedQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 
 const anomalyColumns = [
@@ -31,37 +36,13 @@ const anomalyColumns = [
   { uid: "status", name: "Status" },
   { uid: "size", name: "Size" },
   { uid: "referrer", name: "Referrer" },
-  { uid: "user_agent", name: "User Agent" },
-  { uid: "hour", name: "Hour" },
-  { uid: "anomaly", name: "Anomaly" },
+  { uid: "userAgent", name: "User Agent" },
 ];
 
-type AnomalyDetail = {
-  ip: string;
-  datetime: string;
-  method: string;
-  url: string;
-  status: number;
-  size: number;
-  referrer: string;
-  user_agent: string;
-  hour: number;
-  anomaly: number;
-};
-
-type ReportData = {
-  total_requests: number;
-  unique_ips: number;
-  status_code_distribution: Record<string, number>;
-  request_method_distribution: Record<string, number>;
-  hourly_request_distribution: Record<string, number>;
-  hourly_method_distribution: Array<Record<string, number>>;
-  anomalies: number;
-  anomaly_details?: Array<AnomalyDetail>;
-};
 
 type Props = {
-  reportData: ReportData | null;
+  reportId: Id<"report">;
+  reportData: Doc<"report"> | null | undefined;
 };
 
 type FilterState = Selection;
@@ -79,16 +60,22 @@ const INITIAL_VISIBLE_COLUMNS = [
   "anomaly",
 ];
 
-export default function ReportPage({ reportData }: Props) {
+export default function ReportPage({ reportId, reportData }: Props) {
   const [filterValue, setFilterValue] = React.useState<string>("");
   const [dateRange, setDateRange] = React.useState<RangeValue<DateValue> | null>(null);
   const [statusFilter, setStatusFilter] = React.useState<FilterState>("all");
   const [methodFilter, setMethodFilter] = React.useState<FilterState>("all");
   const [selectedKeys, setSelectedKeys] = React.useState<Selection>(new Set());
-  const [visibleColumns, setVisibleColumns] = React.useState<Set<string> | "all">(new Set(["ip", "datetime", "method", "url", "status", "size", "referrer", "user_agent", "hour", "anomaly"]));
+  const [visibleColumns, setVisibleColumns] = React.useState<Set<string> | "all">(new Set(["ip", "datetime", "method", "url", "status", "size", "referrer", "userAgent"]));
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({ column: "datetime", direction: "ascending" });
   const [page, setPage] = React.useState<number>(1);
+
+  const { results , status , loadMore} = usePaginatedQuery(
+    api.logAnalyze.paginatedAnomalyDetails,
+    {reportId},
+    {initialNumItems: 10}
+  )  
 
   const onClear = React.useCallback(() => {
     setFilterValue("");
@@ -112,12 +99,15 @@ export default function ReportPage({ reportData }: Props) {
     setPage(1);
   }, []);
 
-  const onNextPage = React.useCallback(() => {
+  const onNextPage = React.useCallback(async () => {
     if (page < pages) {
       setPage(page + 1);
+    } else if (page === pages && status === "CanLoadMore") {
+      // Load more data when reaching the last page and there's more data to load
+      await loadMore(25);
     }
-  }, [page]);
-
+  }, [page, status, loadMore]);
+  
   const onPreviousPage = React.useCallback(() => {
     if (page > 1) {
       setPage(page - 1);
@@ -132,19 +122,19 @@ export default function ReportPage({ reportData }: Props) {
   }, [visibleColumns]);
 
   const filteredItems = React.useMemo(() => {
-    let filteredAnomalies = [...(reportData?.anomaly_details || [])];
+    let filteredAnomalies = [...(results || [])];
 
     // Apply search filter
     if (filterValue) {
       filteredAnomalies = filteredAnomalies.filter((anomaly) =>
-        anomaly.ip.toLowerCase().includes(filterValue.toLowerCase()),
+        anomaly.ip?.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
 
     // Apply date range filter
     if (dateRange && dateRange.start && dateRange.end) {
       filteredAnomalies = filteredAnomalies.filter((anomaly) => {
-        const anomalyDate = new Date(anomaly.datetime);
+        const anomalyDate = anomaly.datetime ? new Date(anomaly.datetime) : new Date();
         return anomalyDate >= dateRange.start.toDate(getLocalTimeZone()) && anomalyDate <= dateRange.end.toDate(getLocalTimeZone());
       });
     }
@@ -152,19 +142,19 @@ export default function ReportPage({ reportData }: Props) {
     // Apply status code filter
     if (statusFilter !== "all") {
       filteredAnomalies = filteredAnomalies.filter((anomaly) =>
-        Array.from(statusFilter).includes(anomaly.status.toString())
+        anomaly.status !== undefined && Array.from(statusFilter).includes(anomaly.status.toString())
       );
     }
 
     // Apply method filter
     if (methodFilter !== "all") {
       filteredAnomalies = filteredAnomalies.filter((anomaly) =>
-        Array.from(methodFilter).includes(anomaly.method)
+        anomaly.method !== undefined && Array.from(methodFilter).includes(anomaly.method)
       );
     }
 
     return filteredAnomalies;
-  }, [reportData?.anomaly_details, filterValue, dateRange, statusFilter, methodFilter]);
+  }, [results, filterValue, dateRange, statusFilter, methodFilter]);
 
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
@@ -228,7 +218,7 @@ export default function ReportPage({ reportData }: Props) {
                 selectionMode="multiple"
                 onSelectionChange={setStatusFilter}
               >
-                {Object.keys(reportData?.status_code_distribution || {}).map((status) => (
+                {Object.keys(reportData?.statusCodeDistribution || {}).map((status) => (
                   <DropdownItem key={status}>
                     {status}
                   </DropdownItem>
@@ -249,7 +239,7 @@ export default function ReportPage({ reportData }: Props) {
                 selectionMode="multiple"
                 onSelectionChange={setMethodFilter}
               >
-                {Object.keys(reportData?.request_method_distribution || {}).map((method) => (
+                {Object.keys(reportData?.requestMethodDistribution || {}).map((method) => (
                   <DropdownItem key={method}>
                     {method}
                   </DropdownItem>
@@ -282,6 +272,9 @@ export default function ReportPage({ reportData }: Props) {
     onSearchChange,
     onRowsPerPageChange,
     filteredItems.length,
+    onClear,
+    reportData?.requestMethodDistribution,
+    reportData?.statusCodeDistribution,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -311,7 +304,7 @@ export default function ReportPage({ reportData }: Props) {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [selectedKeys, page, pages, filteredItems.length, onNextPage, onPreviousPage]);
 
 
   return (
@@ -344,8 +337,8 @@ export default function ReportPage({ reportData }: Props) {
         )}
       </TableHeader>
       <TableBody items={sortedItems}>
-        {(item) => (
-          <TableRow key={item.datetime}>
+        {(item:AnomalyDetail) => (
+          <TableRow key={item._id}>
             {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
           </TableRow>
         )}

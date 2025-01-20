@@ -23,7 +23,6 @@ export default function NavBar() {
   const pathName = usePathname();
   const { data, isLoading } = useCurrentUser();
   const { signOut } = useAuthActions();
-  console.log(data);
 
   return (
     <Navbar

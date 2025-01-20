@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
+import { paginationOptsValidator } from "convex/server";
 
 interface LogEntry {
   ip: string;
@@ -239,5 +240,55 @@ export const logAnalyze = mutation({
       });
     }
     return reportId;
+  },
+});
+
+export const getReportWithAnomalyDetails = query({
+  args: { reportId: v.id("report") },
+  handler: async (ctx, args) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) {
+      return null;
+    }
+    const report = await ctx.db.get(args.reportId);
+    if (!report) {
+      return null;
+    }
+    if (report.userId !== userId) {
+      return null;
+    }
+
+    return { ...report };
+  },
+});
+
+export const getUserCurrentReportId = query({
+  handler: async (ctx) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) {
+      return null;
+    }
+
+    const report = await ctx.db
+      .query("report")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .first();
+
+    return report ? report._id : null;
+  },
+});
+
+export const paginatedAnomalyDetails = query({
+  args: { 
+    reportId: v.id("report"),
+    paginationOpts: paginationOptsValidator 
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("anomalyDetails")
+      .withIndex("by_reportId", (q) => q.eq("reportId", args.reportId))
+      .order("desc")
+      .paginate(args.paginationOpts);
   },
 });

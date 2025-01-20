@@ -1,76 +1,112 @@
-
-import { Area, Bar, Line } from "@ant-design/plots"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import AnomalyPage from './ananomy';
-
-
-type AnomalyDetail = {
-  ip: string;
-  datetime: string;
-  method: string;
-  url: string;
-  status: number;
-  size: number;
-  referrer: string;
-  user_agent: string;
-  hour: number;
-  anomaly: number;
-};
-
-type ReportData = {
-  total_requests: number;
-  unique_ips: number;
-  status_code_distribution: Record<string, number>;
-  request_method_distribution: Record<string, number>;
-  hourly_request_distribution: Record<string, number>;
-  hourly_method_distribution: Array<Record<string, number>>;
-  anomalies: number;
-  anomaly_details: Array<AnomalyDetail>;
-};
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import AnomalyPage from "./ananomy";
+import { Id } from "@/convex/_generated/dataModel";
+import { useGetLogReport } from "@/app/(root)/api/LogReport/get-log-report";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Label,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 type Props = {
-  reportData: ReportData | null;
+  reportId: Id<"report">;
 };
 
-const ReportPage = ({ reportData }: Props) => {
+const COLORS = [
+  "#0088FE",
+  "#00C49F",
+  "#FFBB28",
+  "#FF8042",
+  "#8884d8",
+  "#82ca9d",
+];
 
-  if (!reportData) return <p className="text-center text-red-500">No report found</p>;
+const ReportPage = ({ reportId }: Props) => {
+  const { data: reportData } = useGetLogReport({ id: reportId });
+
+  if (!reportId)
+    return <p className="text-center text-red-500">No report found</p>;
 
   // Calculate errors, warnings, and informational logs
-  const errors = Object.entries(reportData.status_code_distribution).reduce((acc, [code, count]) => {
+  const errors = Object.entries(
+    reportData?.statusCodeDistribution || {}
+  ).reduce((acc, [code, count]) => {
     if (Number(code) >= 400 && Number(code) < 500) {
       return acc + count;
     }
     return acc;
   }, 0);
 
-  const warnings = Object.entries(reportData.status_code_distribution).reduce((acc, [code, count]) => {
+  const warnings = Object.entries(
+    reportData?.statusCodeDistribution || {}
+  ).reduce((acc, [code, count]) => {
     if (Number(code) >= 500) {
       return acc + count;
     }
     return acc;
   }, 0);
 
-  const info = Object.entries(reportData.status_code_distribution).reduce((acc, [code, count]) => {
-    if (Number(code) >= 200 && Number(code) < 300) {
-      return acc + count;
-    }
-    return acc;
-  }, 0);
+  const info = Object.entries(reportData?.statusCodeDistribution || {}).reduce(
+    (acc, [code, count]) => {
+      if (Number(code) >= 200 && Number(code) < 300) {
+        return acc + count;
+      }
+      return acc;
+    },
+    0
+  );
+
+  const statusCodeData = Object.entries(
+    reportData?.statusCodeDistribution || {}
+  ).map(([name, value]) => ({ name: name.toString(), value }));
+  console.log("Status Code Data:", statusCodeData);
+
+  const topUrlsData = Object.entries(reportData?.topRequestedUrls || {}).map(
+    ([name, value]) => ({ name, value })
+  );
+  const methodData = Object.entries(
+    reportData?.requestMethodDistribution || {}
+  ).map(([name, value]) => ({ name, value }));
 
   return (
     <div className="flex flex-col gap-8 m-4">
-      <h1 className="text-3xl font-bold mb-4">Report</h1>
-      <h2 className="text-2xl font-semibold mb-4">Log Analysis Report</h2>
-      <p className="mb-2"><strong>Total Requests:</strong> {reportData.total_requests}</p>
-      <p className="mb-4"><strong>Unique IPs:</strong> {reportData.unique_ips}</p>
+      <Card className="col-span-full">
+        <CardHeader>
+          <CardTitle>Web Traffic Analytics</CardTitle>
+          <CardDescription>
+            Total Requests: {reportData?.totalRequests} | Unique IPs: {reportData?.uniqueIps} | Anomalies: {reportData?.anomalies}
+          </CardDescription>
+        </CardHeader>
+      </Card>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader>
             <CardTitle>Total Logs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">{reportData.total_requests}</div>
+            <div className="text-4xl font-bold">
+              {reportData?.totalRequests}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -101,137 +137,166 @@ const ReportPage = ({ reportData }: Props) => {
       <Card>
         <CardHeader>
           <CardTitle>Log Data Visualization</CardTitle>
-          <CardDescription>Analyze your log data with interactive charts.</CardDescription>
+          <CardDescription>
+            Analyze your log data with interactive charts.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Bar
-              data={Object.entries(reportData.status_code_distribution).map(([code, count]) => ({
-                type: code,
-                value: count,
-              }))}
-              xField="value"
-              yField="type"
-              seriesField="type"
-              legend={{ position: 'top-right' }}
-              xAxis={{ title: { text: 'Status Code Count' } }}
-              yAxis={{ title: { text: 'Status Code' } }}
-              className="mb-6"
-            />
-            <Bar
-              data={Object.entries(reportData.request_method_distribution).map(([method, count]) => ({
-                type: method,
-                value: count,
-              }))}
-              xField="value"
-              yField="type"
-              seriesField="type"
-              legend={{ position: 'top-right' }}
-              xAxis={{ title: { text: 'Request Count' } }}
-              yAxis={{ title: { text: 'HTTP Method' } }}
-              className="mb-6"
-            />
-            <Line
-              data={Object.entries(reportData.hourly_request_distribution).map(([hour, count]) => ({
-                hour: `Hour ${hour}`,
-                count,
-              }))}
-              xField="hour"
-              yField="count"
-              xAxis={{ title: { text: 'Hour of Day' } }}
-              yAxis={{ title: { text: 'Request Count' } }}
-              smooth
-              className="mb-6"
-            />
-
-            <Area
-              data={Object.entries(reportData.hourly_method_distribution).flatMap(([hour, methods]) =>
-                Object.entries(methods).map(([method, count]) => ({
-                  hour: `Hour ${hour}`,
-                  method,
-                  count,
-                }))
-              )}
-              xField="hour"
-              yField="count"
-              seriesField="method"
-              xAxis={{ title: { text: 'Hour of Day' } }}
-              yAxis={{ title: { text: 'Request Count' } }}
-              areaStyle={{ fillOpacity: 0.5 }}
-              legend={{ position: 'top-right' }}
-              className="mb-6"
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Requested URLs</CardTitle>
+                <CardDescription>Most frequently accessed URLs</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 pb-0">
+                <ChartContainer config={{}}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={topUrlsData}
+                      layout="vertical"
+                      margin={{
+                        left: -20,
+                      }}
+                    >
+                      <XAxis type="number" dataKey="value" hide />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                      />
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent indicator="line" />}
+                      />
+                      <Bar dataKey="value" fill="#1e9cfe" radius={5} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Status Code Distribution</CardTitle>
+                <CardDescription>
+                  HTTP status codes distribution
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 pb-0">
+                <ChartContainer
+                  config={{}}
+                  className="mx-auto aspect-square max-h-[250px]"
+                >
+                  <PieChart>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Pie
+                      data={statusCodeData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={60}
+                      strokeWidth={1}
+                      label={({ name, percent }) => `${name}`}
+                    >
+                      {statusCodeData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                            return (
+                              <text
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  className="fill-foreground text-3xl font-bold"
+                                >
+                                  {reportData?.totalRequests}
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) + 24}
+                                  className="fill-muted-foreground"
+                                >
+                                  Requests
+                                </tspan>
+                              </text>
+                            );
+                          }
+                        }}
+                      />
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Request Methods</CardTitle>
+                <CardDescription>
+                  Distribution of HTTP request methods
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 pb-0">
+                <ChartContainer config={{}}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={methodData}
+                      layout="vertical"
+                      margin={{
+                        left: -20,
+                      }}
+                    >
+                      <XAxis type="number" dataKey="value" hide />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                      />
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent hideLabel />}
+                      />
+                      <Bar dataKey="value" radius={5} layout="vertical">
+                        {methodData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]} // Assign unique color from COLORS array
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
           </div>
         </CardContent>
       </Card>
 
-      <h3 className="text-xl font-semibold mb-2">Status Code Distribution</h3>
-      <Bar
-        data={Object.entries(reportData.status_code_distribution).map(([code, count]) => ({
-          type: code,
-          value: count,
-        }))}
-        xField="value"
-        yField="type"
-        seriesField="type"
-        legend={{ position: 'top-right' }}
-        xAxis={{ title: { text: 'Status Code Count' } }}
-        yAxis={{ title: { text: 'Status Code' } }}
-        className="mb-6"
-      />
-
-      <h3 className="text-xl font-semibold mb-2">Request Method Distribution</h3>
-      <Bar
-        data={Object.entries(reportData.request_method_distribution).map(([method, count]) => ({
-          type: method,
-          value: count,
-        }))}
-        xField="value"
-        yField="type"
-        seriesField="type"
-        legend={{ position: 'top-right' }}
-        xAxis={{ title: { text: 'Request Count' } }}
-        yAxis={{ title: { text: 'HTTP Method' } }}
-        className="mb-6"
-      />
-
-      <h3 className="text-xl font-semibold mb-2">Hourly Request Distribution</h3>
-      <Line
-        data={Object.entries(reportData.hourly_request_distribution).map(([hour, count]) => ({
-          hour: `Hour ${hour}`,
-          count,
-        }))}
-        xField="hour"
-        yField="count"
-        xAxis={{ title: { text: 'Hour of Day' } }}
-        yAxis={{ title: { text: 'Request Count' } }}
-        smooth
-        className="mb-6"
-      />
-
-      <h3 className="text-xl font-semibold mb-2">Hourly Method Distribution</h3>
-      <Area
-        data={Object.entries(reportData.hourly_method_distribution).flatMap(([hour, methods]) =>
-          Object.entries(methods).map(([method, count]) => ({
-            hour: `Hour ${hour}`,
-            method,
-            count,
-          }))
-        )}
-        xField="hour"
-        yField="count"
-        seriesField="method"
-        xAxis={{ title: { text: 'Hour of Day' } }}
-        yAxis={{ title: { text: 'Request Count' } }}
-        areaStyle={{ fillOpacity: 0.5 }}
-        legend={{ position: 'top-right' }}
-        className="mb-6"
-      />
-      <h3 className="text-xl font-semibold mb-2">Anomalies Detected</h3>
-      <AnomalyPage reportData={reportData}/>
+     <Card>
+        <CardHeader>
+          <CardTitle>Log Anomalies</CardTitle>
+          <CardDescription>View detected anomalies in your log data</CardDescription>
+        </CardHeader>
+      </Card>
+     
+      {reportId && <AnomalyPage reportId={reportId} reportData={reportData} />}
     </div>
   );
 };
-
 
 export default ReportPage;
