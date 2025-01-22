@@ -1,17 +1,16 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import GitHub from "@auth/core/providers/github";
 import Google from "@auth/core/providers/google";
-import CustomPassword from "./CustomPassword";
 import { ResendOTPPasswordReset } from "./passwordReset/ResendOTPPasswordReset";
 import { ResendOTP } from "./otp/ResendOTP";
 import { Password } from "@convex-dev/auth/providers/Password";
-import { MutationCtx } from "./_generated/server";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     GitHub({
-      profile(githubProfile, tokens) {
+      profile(githubProfile) {
         return {
+          id: githubProfile.id.toString(),
           email: githubProfile.email,
           firstName: githubProfile.name ? githubProfile.name.split(" ")[0] : "",
           lastName: githubProfile.name ? githubProfile.name.split(" ")[1] : "",
@@ -22,8 +21,9 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       }
     }),
     Google({
-      profile(googleProfile, tokens) {
+      profile(googleProfile) {
         return {
+          id: googleProfile.id,
           email: googleProfile.email,
           firstName: googleProfile.given_name,
           lastName: googleProfile.family_name,
