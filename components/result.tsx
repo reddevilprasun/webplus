@@ -268,7 +268,7 @@ const ReportPage = ({ reportId }: Props) => {
                       />
                       <ChartTooltip
                         cursor={false}
-                        content={<ChartTooltipContent hideLabel />}
+                        content={<ChartTooltipContent indicator="line" color="#00C49F" />}
                       />
                       <Bar dataKey="value" radius={5} layout="vertical">
                         {methodData.map((entry, index) => (

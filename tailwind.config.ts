@@ -10,7 +10,7 @@ const config = {
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
     "./node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}",
-    "./node_modules/@heroui/theme/dist/components/(link|spinner).js"
+    "./node_modules/@heroui/theme/dist/components/(alert|link|spinner|button|ripple).js"
   ],
   prefix: "",
   theme: {

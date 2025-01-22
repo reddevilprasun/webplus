@@ -14,6 +14,8 @@ const schema = defineSchema({
     phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
     userRole: v.union(v.literal("admin"), v.literal("user")),
+    subscriptionType: v.union(v.literal("free"), v.literal("premium")),
+    apiKey: v.optional(v.string()),
     // other "users" fields...
   }).index("email", ["email"]),
   report: defineTable({

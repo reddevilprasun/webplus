@@ -13,6 +13,8 @@ import {
 const isPublicRoute = createRouteMatcher(publicRoutes);
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
+  "/settings(.*)",
+  "/services(.*)",
 ]);
 
 export default convexAuthNextjsMiddleware(async(request, {convexAuth}) => {

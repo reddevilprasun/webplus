@@ -21,6 +21,8 @@ import { Spinner } from "@heroui/spinner";
 
 export default function NavBar() {
   const pathName = usePathname();
+  const isActive = (path: string) => pathName.startsWith(path);
+
   const { data, isLoading } = useCurrentUser();
   const { signOut } = useAuthActions();
 
@@ -52,22 +54,22 @@ export default function NavBar() {
             Home
           </Link>
         </NavbarItem>
-        <NavbarItem isActive={pathName === "/dashboard"}>
+        <NavbarItem isActive={isActive("/dashboard")}>
           <Link href="/dashboard" passHref>
             Dashboard
           </Link>
         </NavbarItem>
-        <NavbarItem isActive={pathName === "/services"}>
+        <NavbarItem isActive={isActive("/services")}>
           <Link href="/services" passHref>
             Services
           </Link>
         </NavbarItem>
-        <NavbarItem isActive={pathName === "/about"}>
+        <NavbarItem isActive={isActive("/about")}>
           <Link href="/about" passHref>
             About
           </Link>
         </NavbarItem>
-        <NavbarItem isActive={pathName === "/contact"}>
+        <NavbarItem isActive={isActive("/contact")}>
           <Link href="/contact" passHref>
             Contact
           </Link>

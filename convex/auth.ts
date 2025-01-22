@@ -9,7 +9,6 @@ import { MutationCtx } from "./_generated/server";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
-    CustomPassword,
     GitHub({
       profile(githubProfile, tokens) {
         return {
@@ -18,6 +17,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           lastName: githubProfile.name ? githubProfile.name.split(" ")[1] : "",
           image: githubProfile.avatar_url,
           userRole: "user",
+          subscriptionType: "free",
         };
       }
     }),
@@ -29,6 +29,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           lastName: googleProfile.family_name,
           image: googleProfile.picture,
           userRole: "user",
+          subscriptionType: "free",
         };
       }
     }),
@@ -42,6 +43,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           firstName: params.firstName as string,
           lastName: params.lastName as string,
           userRole: "user",
+          subscriptionType: "free",
         };
       }
     })

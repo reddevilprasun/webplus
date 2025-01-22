@@ -1,6 +1,31 @@
-import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { ConvexError, v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
+
+const generateApiKey = () => {
+  return Math.random().toString(36).substr(2, 10);
+}
+
+export const createApiKey = mutation({
+  handler: async (ctx) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId ) {
+      throw new ConvexError("User not found");
+    }
+    const user = await ctx.db.get(userId);
+    if(!user) {
+      throw new ConvexError("User not found");
+    }
+    if(user.subscriptionType !== "premium") {
+      throw new ConvexError("User does not have a premium subscription");
+    }
+
+    const apiKey = generateApiKey();
+    await ctx.db.patch(userId, { apiKey });
+
+    return apiKey;
+  },
+})
 
 export const findUserByEmail = query({
   args: {
@@ -26,3 +51,21 @@ export const current = query({
     return await ctx.db.get(userId);
   },
 });
+
+export const getUserSubscriptionStatus = query({
+  handler: async (ctx) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) {
+      return null;
+    }
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      return null;
+    }
+
+    return {
+      subscriptionType: user.subscriptionType,
+      apiKey: user.apiKey,
+    }
+  },
+})

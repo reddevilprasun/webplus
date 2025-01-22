@@ -28,6 +28,7 @@ export default Password<DataModel>({
       firstName: data.firstName,
       lastName: data.lastName,
       userRole: data.userRole,
+      subscriptionType: "free",
     };
   },
 });
