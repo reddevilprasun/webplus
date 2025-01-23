@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,8 +13,9 @@ import { get } from "http";
 import { Alert } from "@heroui/react";
 import { Check } from "lucide-react";
 import { useGetUserSubscriptionType } from "@/app/(root)/features/getUserSubscriptionStatus";
+import { PurchasePlanDialog } from "../components/PurchesPlanDialog";
+import { toast } from "sonner";
 
-// This is a mock function. In a real application, you would check the user's subscription status from your backend or a state management solution.
 
 const plans = [
   {
@@ -57,49 +58,78 @@ const plans = [
 
 const PurchasePlanPage = () => {
   const { data: userSubscription, isLoading } = useGetUserSubscriptionType();
-  console.log("UserSubscription:", userSubscription);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+
+  const handlePurchase = (planName: string) => {
+    setSelectedPlan(planName);
+    setIsDialogOpen(true);
+  };
+
+  const handlePurchaseSuccess = () => {
+    toast.success("Purchase Successful", {
+      description: `You've successfully upgraded to the ${selectedPlan} plan!`,
+    });
+    setIsDialogOpen(false);
+  };
+
   return (
-    <div className=" space-y-6">
-      <h1 className=" text-3xl font-bold">Upgrade Your Plan</h1>
-      {userSubscription?.subscriptionType !== "premium" && (
-        <Alert
-          title="Upgrade Required"
-          description="You need to upgrade to a premium plan to access all features. Choose a plan below to continue."
-          variant="faded"
-          color="danger"
-        />
-      )}
-      <p className="text-muted-foreground">
-        Choose the plan that best fits your needs and take your project to the
-        next level.
-      </p>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {plans.map((plan) => (
-          <Card key={plan.name} className="flex flex-col">
-            <CardHeader>
-              <CardTitle>{plan.name}</CardTitle>
-              <CardDescription>{plan.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <p className="text-3xl font-bold mb-4">{plan.price}</p>
-              <ul className="space-y-2">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-center">
-                    <Check className="mr-2 h-4 w-4 text-green-500" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full bg-gradient-to-b from-cyan-600 to-sky-400">
-                {plan.name === "Enterprise" ? "Contact Sales" : "Upgrade Now"}
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+    <>
+      <PurchasePlanDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onPurchase={handlePurchaseSuccess}
+        planName={selectedPlan}
+      />
+      <div className=" space-y-6 m-8">
+        <h1 className=" text-3xl font-bold">Upgrade Your Plan</h1>
+        {userSubscription?.subscriptionType !== "premium" && (
+          <Alert
+            title="Upgrade Required"
+            description="You need to upgrade to a premium plan to access all features. Choose a plan below to continue."
+            variant="faded"
+            color="danger"
+          />
+        )}
+        <p className="text-muted-foreground">
+          Choose the plan that best fits your needs and take your project to the
+          next level.
+        </p>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {plans.map((plan) => (
+            <Card key={plan.name} className="flex flex-col">
+              <CardHeader>
+                <CardTitle>{plan.name}</CardTitle>
+                <CardDescription>{plan.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <p className="text-3xl font-bold mb-4">{plan.price}</p>
+                <ul className="space-y-2">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-center">
+                      <Check className="mr-2 h-4 w-4 text-green-500" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  className="w-full bg-gradient-to-b from-cyan-600 to-sky-400"
+                  onClick={() => handlePurchase(plan.name)}
+                  // disabled={
+                  //   isLoading ||
+                  //   userSubscription?.subscriptionType === "premium"
+                  // }
+                >
+                  {plan.name === "Enterprise" ? "Contact Sales" : "Upgrade Now"}
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

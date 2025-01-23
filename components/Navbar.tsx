@@ -18,6 +18,8 @@ import { Loader, LogOut } from "lucide-react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Spinner } from "@heroui/spinner";
+import { Chip } from "@heroui/chip";
+import { Avatar } from "@heroui/react";
 
 export default function NavBar() {
   const pathName = usePathname();
@@ -95,16 +97,32 @@ export default function NavBar() {
             <NavbarItem>
               <Dropdown placement="bottom-start">
                 <DropdownTrigger>
-                  <User
-                    as="button"
-                    avatarProps={{
-                      isBordered: true,
-                      src: data.image,
-                    }}
-                    className="transition-transform"
-                    description={data.email}
-                    name={data.firstName + " " + data.lastName}
-                  />
+                  <div className=" flex gap-2 items-center">
+                    <Avatar
+                      src={data.image}
+                      showFallback
+                      color={
+                        data.subscriptionType === "free" ? "default" : "warning"
+                      }
+                      isBordered
+                    />
+                    <div className="flex flex-col justify-center">
+                      <div className="flex gap-1 items-center">
+                        <p className="font-bold">{`${data.firstName} ${data.lastName}`}</p>
+                        <Chip
+                          color={
+                            data.subscriptionType === "free"
+                              ? "default"
+                              : "warning"
+                          }
+                          size="sm"
+                        >
+                          {data.subscriptionType === "free" ? "Free" : "Pro"}
+                        </Chip>
+                      </div>
+                      <p className="text-xs text-gray-500">{data.email}</p>
+                    </div>
+                  </div>
                 </DropdownTrigger>
                 <DropdownMenu aria-label="User Actions" variant="flat">
                   <DropdownItem key="profile" className="h-14 gap-2">

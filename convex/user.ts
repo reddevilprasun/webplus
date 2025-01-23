@@ -1,9 +1,14 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { auth } from "./auth";
 
 const generateApiKey = () => {
-  return Math.random().toString(36).substr(2, 10);
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = (Math.random() * 16) | 0;
+    const value = char === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
 }
 
 export const createApiKey = mutation({
@@ -23,7 +28,7 @@ export const createApiKey = mutation({
     const apiKey = generateApiKey();
     await ctx.db.patch(userId, { apiKey });
 
-    return apiKey;
+    return userId;
   },
 })
 
@@ -41,7 +46,6 @@ export const findUserByEmail = query({
 });
 
 export const current = query({
-  args: {},
   handler: async (ctx) => {
     const userId = await auth.getUserId(ctx);
     if (!userId) {
@@ -68,4 +72,43 @@ export const getUserSubscriptionStatus = query({
       apiKey: user.apiKey,
     }
   },
+})
+
+export const updateUserSubscriptionType = mutation({
+  args: {
+    couponCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("User not found");
+    }
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new ConvexError("User not found");
+    }
+
+    if (user.subscriptionType === "premium") {
+      throw new ConvexError("User is already subscribed to Pro");
+    }
+
+    const coupon = await ctx.db
+      .query("coupons")
+      .withIndex("by_code", (q) => q.eq("code", args.couponCode.toUpperCase()))
+      .unique();
+
+    if (!coupon) {
+      throw new ConvexError("Invalid coupon code");
+    }
+
+    if (coupon.isActive === false) {
+      throw new ConvexError("Coupon code is not active");
+    }
+
+    await ctx.runMutation(internal.subscription.makeSubscriptionPro, { id: userId });
+
+    await ctx.db.patch(coupon._id, { currentUses: coupon.currentUses + 1 });
+
+    return userId;
+  }
 })

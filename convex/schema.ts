@@ -44,6 +44,15 @@ const schema = defineSchema({
     referrer: v.optional(v.string()),
     userAgent: v.optional(v.string()),
   }).index("by_reportId", ["reportId"]),
+  coupons: defineTable({
+    code: v.string(),
+    discountPercentage: v.number(),
+    validFrom: v.number(), // Unix timestamp
+    validUntil: v.number(), // Unix timestamp
+    maxUses: v.number(),
+    currentUses: v.number(),
+    isActive: v.boolean(),
+  }).index("by_code", ["code"]),
 });
 
 export default schema;

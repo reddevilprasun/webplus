@@ -49,7 +49,7 @@ export function ServiceSidebar() {
       <nav className="flex-1 space-y-2 p-4">
         {sidebarItems.map(
           (item) =>
-            (userSubscription?.subscriptionType === "free" || !item.requiresPremium) && (
+            (userSubscription?.subscriptionType === "premium" || !item.requiresPremium) && (
               <Link key={item.name} href={`${item.href}`} passHref>
                 <Button
                   variant="ghost"

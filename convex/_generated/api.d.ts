@@ -15,12 +15,14 @@ import type {
 } from "convex/server";
 import type * as CustomPassword from "../CustomPassword.js";
 import type * as auth from "../auth.js";
+import type * as coupon from "../coupon.js";
 import type * as http from "../http.js";
 import type * as logAnalyze from "../logAnalyze.js";
 import type * as otp_ResendOTP from "../otp/ResendOTP.js";
 import type * as otp_VerificationCodeEmail from "../otp/VerificationCodeEmail.js";
 import type * as passwordReset_PasswordResetEmail from "../passwordReset/PasswordResetEmail.js";
 import type * as passwordReset_ResendOTPPasswordReset from "../passwordReset/ResendOTPPasswordReset.js";
+import type * as subscription from "../subscription.js";
 import type * as user from "../user.js";
 
 /**
@@ -34,12 +36,14 @@ import type * as user from "../user.js";
 declare const fullApi: ApiFromModules<{
   CustomPassword: typeof CustomPassword;
   auth: typeof auth;
+  coupon: typeof coupon;
   http: typeof http;
   logAnalyze: typeof logAnalyze;
   "otp/ResendOTP": typeof otp_ResendOTP;
   "otp/VerificationCodeEmail": typeof otp_VerificationCodeEmail;
   "passwordReset/PasswordResetEmail": typeof passwordReset_PasswordResetEmail;
   "passwordReset/ResendOTPPasswordReset": typeof passwordReset_ResendOTPPasswordReset;
+  subscription: typeof subscription;
   user: typeof user;
 }>;
 export declare const api: FilterApi<

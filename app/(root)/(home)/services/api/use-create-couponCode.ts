@@ -1,9 +1,11 @@
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
+import { WithoutSystemFields } from "convex/server";
 import { useCallback, useMemo, useState } from "react";
 
-type ReturnType = Id<"users">;
+type ReturnType = Id<"coupons"> | null;
+type RequestType = Omit<WithoutSystemFields<Doc<"coupons">>, "currentUses">;
 
 type Options = {
   onSuccess?: (data: string) => void;
@@ -12,8 +14,8 @@ type Options = {
   throwError?: boolean;
 };
 
-export const useCreateNewApiKey = () => {
-  const [data, setData] = useState<ReturnType>();
+export const useCreateCouponCode = () => {
+  const [data, setData] = useState<ReturnType>(null);
   const [error, setError] = useState<Error | null>(null);
   const [status, setStatus] = useState<
     "success" | "error" | "settled" | "pending" | null
@@ -24,15 +26,15 @@ export const useCreateNewApiKey = () => {
   const isError = useMemo(() => status === "error", [status]);
   const isSettled = useMemo(() => status === "settled", [status]);
 
-  const mutation = useMutation(api.user.createApiKey);
+  const mutation = useMutation(api.coupon.createCoupon);
 
   const mutated = useCallback(
-    async (options?: Options) => {
+    async (values:RequestType, options?: Options) => {
       try {
-        setData(undefined);
+        setData(null);
         setError(null);
         setStatus("pending");
-        const response = await mutation();
+        const response = await mutation(values);
         options?.onSuccess?.(response);
         setData(response);
         return response;

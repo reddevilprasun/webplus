@@ -6,7 +6,7 @@ export default function ServicePageLayout({
   return (
     <div className=" flex h-screen overflow-hidden">
       <ServiceSidebar />
-      <main className="flex-1 overflow-y-auto p-8 bg-background">
+      <main className="flex-1 overflow-y-auto bg-background">
         {children}
       </main>
     </div>
