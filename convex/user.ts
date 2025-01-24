@@ -11,6 +11,12 @@ const generateApiKey = () => {
   });
 }
 
+export const getCurrentUserId = query({
+  handler: async (ctx) => {
+    return await auth.getUserId(ctx);
+  }
+})
+
 export const createApiKey = mutation({
   handler: async (ctx) => {
     const userId = await auth.getUserId(ctx);

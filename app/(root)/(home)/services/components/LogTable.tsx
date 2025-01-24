@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import {
   Table,
@@ -16,41 +17,110 @@ import {
   Selection,
   SortDescriptor,
   DateRangePicker,
-} from "@nextui-org/react";
-import { ChevronDownIcon, SearchIcon } from "lucide-react";
+} from "@heroui/react";
+import { ChevronDownIcon, MoreHorizontal, SearchIcon, SortAsc } from "lucide-react";
 import { RangeValue } from "@react-types/shared";
 import { DateValue } from "@react-types/datepicker";
 import { parseDate, getLocalTimeZone } from "@internationalized/date";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 
-type AnomalyDetail = Doc<"anomalyDetails">;
+type AnomalyDetail = Doc<"logInformation">;
 import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { useCurrentUser } from "@/app/(auth)/features/auth/api/user-current";
+import { format } from "date-fns";
+import { Chip, ChipProps } from "@heroui/chip";
 
 const anomalyColumns = [
-  { uid: "ip", name: "IP" },
-  { uid: "datetime", name: "Date & Time" },
+  { uid: "ip", name: "IP", sortable: true },
+  { uid: "timestamp", name: "Date & Time" },
   { uid: "method", name: "Method" },
   { uid: "url", name: "URL" },
-  { uid: "status", name: "Status" },
-  { uid: "size", name: "Size" },
-  { uid: "referrer", name: "Referrer" },
+  { uid: "statusCode", name: "Status", sortable: true },
+  { uid: "event", name: "Events" },
+  { uid: "responseTime", name: "Response Time" },
+  { uid: "requestBody", name: "Request Body" },
+  { uid: "responseBody", name: "Response Body" },
   { uid: "userAgent", name: "User Agent" },
+  { uid: "actions", name: "Actions" },
+];
+
+const statusCodes = [
+  "100", // Continue
+  "101", // Switching Protocols
+  "200", // OK
+  "201", // Created
+  "202", // Accepted
+  "204", // No Content
+  "301", // Moved Permanently
+  "302", // Found
+  "304", // Not Modified
+  "400", // Bad Request
+  "401", // Unauthorized
+  "403", // Forbidden
+  "404", // Not Found
+  "405", // Method Not Allowed
+  "500", // Internal Server Error
+  "501", // Not Implemented
+  "502", // Bad Gateway
+  "503", // Service Unavailable
+  "504", // Gateway Timeout
+  "505", // HTTP Version Not Supported
+];
+
+const httpStatusOptions = [
+  {name: "OK", code: 200},
+  {name: "Created", code: 201},
+  {name: "Accepted", code: 202},
+  {name: "No Content", code: 204},
+  {name: "Bad Request", code: 400},
+  {name: "Unauthorized", code: 401},
+  {name: "Forbidden", code: 403},
+  {name: "Not Found", code: 404},
+  {name: "Internal Server Error", code: 500},
+  {name: "Service Unavailable", code: 503},
+];
+
+const httpStatusColorMap: Record<string , ChipProps["color"]> = {
+  200: "success",        // OK
+  201: "success",        // Created
+  202: "success",        // Accepted
+  204: "success",        // No Content
+  400: "danger",         // Bad Request
+  401: "danger",         // Unauthorized
+  403: "danger",         // Forbidden
+  404: "danger",         // Not Found
+  500: "danger",         // Internal Server Error
+  503: "danger",         // Service Unavailable
+};
+
+
+const httpMethods = [
+  "GET",
+  "POST",
+  "PUT",
+  "DELETE",
+  "PATCH",
+  "HEAD",
+  "OPTIONS",
+  "CONNECT",
+  "TRACE",
 ];
 
 type Props = {
-  reportId: Id<"report">;
-  reportData: Doc<"report"> | null | undefined;
+  reportData: Doc<"logInformation">[];
+  loadMore: (numItems: number) => void;
+  status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
 };
 
 type FilterState = Selection;
 
 const INITIAL_VISIBLE_COLUMNS = [
   "ip",
-  "datetime",
+  "timestamp",
   "method",
   "url",
-  "status",
+  "statusCode",
   "size",
   "referrer",
   "user_agent",
@@ -58,8 +128,24 @@ const INITIAL_VISIBLE_COLUMNS = [
   "anomaly",
 ];
 
-export default function ReportPage({ reportId, reportData }: Props) {
-  const [filterValue, setFilterValue] = React.useState<string>("");
+export function capitalize(s: string) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+}
+
+export default function LogTable() {
+  const user = useCurrentUser();
+  const {
+    results: reportData,
+    status,
+    loadMore,
+  } = usePaginatedQuery(
+    api.premium.currentPremiumUserLogs,
+    { userId: user.data?._id },
+    { initialNumItems: 10 }
+  );
+  
+
+  const [filterValue, setFilterValue] = React.useState("");
   const [dateRange, setDateRange] =
     React.useState<RangeValue<DateValue> | null>(null);
   const [statusFilter, setStatusFilter] = React.useState<FilterState>("all");
@@ -68,28 +154,137 @@ export default function ReportPage({ reportId, reportData }: Props) {
   const [visibleColumns, setVisibleColumns] = React.useState<
     Set<string> | "all"
   >(
-    new Set([
-      "ip",
-      "datetime",
-      "method",
-      "url",
-      "status",
-      "size",
-      "referrer",
-      "userAgent",
-    ])
+    new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({
-    column: "datetime",
+    column: "statusCode",
     direction: "ascending",
   });
   const [page, setPage] = React.useState<number>(1);
+  const hasSearchFilter = Boolean(filterValue);
+  
 
-  const { results, status, loadMore } = usePaginatedQuery(
-    api.logAnalyze.paginatedAnomalyDetails,
-    { reportId },
-    { initialNumItems: 10 }
+  
+
+
+  const headerColumns = React.useMemo(() => {
+    if (visibleColumns === "all") return anomalyColumns;
+    return anomalyColumns.filter((column) =>
+      Array.from(visibleColumns).includes(column.uid)
+    );
+  }, [visibleColumns]);
+
+  const filteredItems = React.useMemo(() => {
+    let filteredAnomalies = [...(reportData || [])];
+
+    // Apply search filter
+    if (hasSearchFilter) {
+      filteredAnomalies = filteredAnomalies.filter((anomaly) =>
+        anomaly.ip?.toLowerCase().includes(filterValue.toLowerCase())
+      );
+    }
+
+    // Apply date range filter
+    if (dateRange && dateRange.start && dateRange.end) {
+      filteredAnomalies = filteredAnomalies.filter((anomaly) => {
+        const anomalyDate = anomaly.timestamp
+          ? new Date(anomaly.timestamp)
+          : new Date();
+        return (
+          anomalyDate >= dateRange.start.toDate(getLocalTimeZone()) &&
+          anomalyDate <= dateRange.end.toDate(getLocalTimeZone())
+        );
+      });
+    }
+
+    // Apply status code filter
+    if (statusFilter !== "all" && Array.from(statusFilter).length !== httpStatusOptions.length) {
+      filteredAnomalies = filteredAnomalies.filter((anomaly) =>
+          anomaly.statusCode !== undefined &&
+          Array.from(statusFilter).includes(anomaly.statusCode.toString())
+      );
+    }
+
+    // Apply method filter
+    if (methodFilter !== "all") {
+      filteredAnomalies = filteredAnomalies.filter(
+        (anomaly) =>
+          anomaly.method !== undefined &&
+          Array.from(methodFilter).includes(anomaly.method)
+      );
+    }
+
+    return filteredAnomalies;
+  }, [reportData, filterValue, dateRange, statusFilter, methodFilter,hasSearchFilter]);
+
+  const pages = Math.ceil(filteredItems.length / rowsPerPage);
+
+  const onNextPage = React.useCallback(async () => {
+    if (page < pages) {
+      setPage(page + 1);
+    } else if (page === pages && status === "CanLoadMore") {
+      // Load more data when reaching the last page and there's more data to load
+      await loadMore(25);
+    }
+  }, [page, status, loadMore, pages]);
+
+  const onPreviousPage = React.useCallback(() => {
+    if (page > 1) {
+      setPage(page - 1);
+    }
+  }, [page]);
+
+  const items = React.useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    return filteredItems.slice(start, end);
+  }, [page, filteredItems, rowsPerPage]);
+
+  const sortedItems = React.useMemo(() => {
+    return [...items].sort((a: AnomalyDetail, b: AnomalyDetail) => {
+      const first = a[sortDescriptor.column as keyof AnomalyDetail] as number;
+      const second = b[sortDescriptor.column as keyof AnomalyDetail] as number;
+      const cmp = first < second ? -1 : first > second ? 1 : 0;
+      
+      return sortDescriptor.direction === "ascending" ? cmp : -cmp;
+    });
+  }, [sortDescriptor, items]);
+
+  const renderCell = React.useCallback(
+    (anomaly: AnomalyDetail, columnKey: React.Key) => {
+      const cellValue = anomaly[columnKey as keyof AnomalyDetail];
+      switch (columnKey) {
+        case "timestamp":
+          return format(new Date(cellValue as string), "yyyy-MM-dd HH:mm:ss");
+        case "statusCode":
+          return (
+            <Chip className="capitalize" size="sm" variant="flat" color={anomaly.statusCode ? httpStatusColorMap[String(anomaly.statusCode) as keyof typeof httpStatusColorMap] as ChipProps["color"] : "default"}>
+              {cellValue}
+            </Chip>
+          );
+        case "action":
+          return (
+            <div className="relative flex justify-end items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <MoreHorizontal className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  <DropdownItem key="view">View</DropdownItem>
+                  <DropdownItem key="edit">Edit</DropdownItem>
+                  <DropdownItem key="delete">Delete</DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+        default:
+          return cellValue;
+      }
+    },
+    []
   );
 
   const onClear = React.useCallback(() => {
@@ -117,108 +312,6 @@ export default function ReportPage({ reportId, reportData }: Props) {
     []
   );
 
-  const onNextPage = React.useCallback(async () => {
-    if (page < pages) {
-      setPage(page + 1);
-    } else if (page === pages && status === "CanLoadMore") {
-      // Load more data when reaching the last page and there's more data to load
-      await loadMore(25);
-    }
-  }, [page, status, loadMore]);
-
-  const onPreviousPage = React.useCallback(() => {
-    if (page > 1) {
-      setPage(page - 1);
-    }
-  }, [page]);
-
-  const hasSearchFilter = Boolean(filterValue);
-
-  const headerColumns = React.useMemo(() => {
-    if (visibleColumns === "all") return anomalyColumns;
-    return anomalyColumns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
-    );
-  }, [visibleColumns]);
-
-  const filteredItems = React.useMemo(() => {
-    let filteredAnomalies = [...(results || [])];
-
-    // Apply search filter
-    if (filterValue) {
-      filteredAnomalies = filteredAnomalies.filter((anomaly) =>
-        anomaly.ip?.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
-
-    // Apply date range filter
-    if (dateRange && dateRange.start && dateRange.end) {
-      filteredAnomalies = filteredAnomalies.filter((anomaly) => {
-        const anomalyDate = anomaly.datetime
-          ? new Date(anomaly.datetime)
-          : new Date();
-        return (
-          anomalyDate >= dateRange.start.toDate(getLocalTimeZone()) &&
-          anomalyDate <= dateRange.end.toDate(getLocalTimeZone())
-        );
-      });
-    }
-
-    // Apply status code filter
-    if (statusFilter !== "all") {
-      filteredAnomalies = filteredAnomalies.filter(
-        (anomaly) =>
-          anomaly.status !== undefined &&
-          Array.from(statusFilter).includes(anomaly.status.toString())
-      );
-    }
-
-    // Apply method filter
-    if (methodFilter !== "all") {
-      filteredAnomalies = filteredAnomalies.filter(
-        (anomaly) =>
-          anomaly.method !== undefined &&
-          Array.from(methodFilter).includes(anomaly.method)
-      );
-    }
-
-    return filteredAnomalies;
-  }, [results, filterValue, dateRange, statusFilter, methodFilter]);
-
-  const pages = Math.ceil(filteredItems.length / rowsPerPage);
-
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
-  const sortedItems = React.useMemo(() => {
-    return [...items].sort((a: AnomalyDetail, b: AnomalyDetail) => {
-      const first = new Date(
-        a[sortDescriptor.column as keyof AnomalyDetail] as string
-      ).getTime();
-      const second = new Date(
-        b[sortDescriptor.column as keyof AnomalyDetail] as string
-      ).getTime();
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-  }, [sortDescriptor, items]);
-
-  const renderCell = React.useCallback(
-    (anomaly: AnomalyDetail, columnKey: React.Key) => {
-      const cellValue = anomaly[columnKey as keyof AnomalyDetail];
-      switch (columnKey) {
-        case "datetime":
-          return new Date(cellValue as string).toLocaleString();
-        default:
-          return cellValue;
-      }
-    },
-    []
-  );
-
   const topContent = React.useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
@@ -230,7 +323,7 @@ export default function ReportPage({ reportId, reportData }: Props) {
             startContent={<SearchIcon />}
             value={filterValue}
             onClear={() => onClear()}
-            onValueChange={(value) => onSearchChange(value)}
+            onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
             <DateRangePicker
@@ -258,11 +351,30 @@ export default function ReportPage({ reportId, reportData }: Props) {
                 selectionMode="multiple"
                 onSelectionChange={setStatusFilter}
               >
-                {Object.keys(reportData?.statusCodeDistribution || {}).map(
-                  (status) => (
-                    <DropdownItem key={status}>{status}</DropdownItem>
-                  )
-                )}
+                {statusCodes.map((status) => (
+                  <DropdownItem key={status}>{status}</DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
+            <Dropdown>
+              <DropdownTrigger className="hidden sm:flex">
+                <Button endContent={<ChevronDownIcon className="text-small" />} variant="flat">
+                  Columns
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                disallowEmptySelection
+                aria-label="Table Columns"
+                closeOnSelect={false}
+                selectedKeys={visibleColumns}
+                selectionMode="multiple"
+                onSelectionChange={(keys) => setVisibleColumns(keys as Set<string>)}
+              >
+                {anomalyColumns.map((column) => (
+                  <DropdownItem key={column.uid} className="capitalize">
+                    {capitalize(column.name)}
+                  </DropdownItem>
+                ))}
               </DropdownMenu>
             </Dropdown>
             <Dropdown>
@@ -282,11 +394,9 @@ export default function ReportPage({ reportId, reportData }: Props) {
                 selectionMode="multiple"
                 onSelectionChange={setMethodFilter}
               >
-                {Object.keys(reportData?.requestMethodDistribution || {}).map(
-                  (method) => (
-                    <DropdownItem key={method}>{method}</DropdownItem>
-                  )
-                )}
+                {httpMethods.map((method) => (
+                  <DropdownItem key={method}>{method}</DropdownItem>
+                ))}
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -318,8 +428,7 @@ export default function ReportPage({ reportId, reportData }: Props) {
     onRowsPerPageChange,
     filteredItems.length,
     onClear,
-    reportData?.requestMethodDistribution,
-    reportData?.statusCodeDistribution,
+    visibleColumns,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -390,21 +499,25 @@ export default function ReportPage({ reportId, reportData }: Props) {
           <TableColumn
             key={column.uid}
             align={column.uid === "actions" ? "center" : "start"}
-            allowsSorting
+            allowsSorting={column.sortable}
           >
             {column.name}
           </TableColumn>
         )}
       </TableHeader>
-      <TableBody items={sortedItems}>
-        {(item: AnomalyDetail) => (
-          <TableRow key={item._id}>
-            {(columnKey) => (
-              <TableCell>{renderCell(item, columnKey)}</TableCell>
-            )}
-          </TableRow>
-        )}
-      </TableBody>
+      {sortedItems.length === 0 ? (
+        <TableBody emptyContent={"No rows to display."}>{[]}</TableBody>
+      ) : (
+        <TableBody items={sortedItems}>
+          {(item: AnomalyDetail) => (
+            <TableRow key={item._id}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      )}
     </Table>
   );
 }

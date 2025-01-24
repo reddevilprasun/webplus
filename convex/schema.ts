@@ -17,7 +17,10 @@ const schema = defineSchema({
     subscriptionType: v.union(v.literal("free"), v.literal("premium")),
     apiKey: v.optional(v.string()),
     // other "users" fields...
-  }).index("email", ["email"]),
+  }).index("email", ["email"])
+    .index("phone", ["phone"])
+    .index("apiKey", ["apiKey"])
+  ,
   report: defineTable({
     userId: v.id("users"),
     totalRequests: v.number(),
@@ -53,6 +56,22 @@ const schema = defineSchema({
     currentUses: v.number(),
     isActive: v.boolean(),
   }).index("by_code", ["code"]),
+  logInformation: defineTable({
+    ip: v.string(),
+    userAgent: v.string(),
+    url: v.string(),
+    event: v.string(),
+    timestamp: v.string(),
+    method: v.optional(v.string()),
+    statusCode: v.optional(v.number()),
+    responseTime: v.optional(v.number()),
+    requestBody: v.optional(v.union(v.string(), v.null())),
+    responseBody: v.optional(v.union(v.string(), v.null())),
+    apiKey: v.string(),
+    userId: v.id("users"),
+  }).index("by_apiKey", ["apiKey"])
+    .index("by_userId", ["userId"])
+    .index("by_timestamp", ["timestamp"]),
 });
 
 export default schema;

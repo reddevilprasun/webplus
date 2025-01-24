@@ -292,3 +292,4 @@ export const paginatedAnomalyDetails = query({
       .paginate(args.paginationOpts);
   },
 });
+
