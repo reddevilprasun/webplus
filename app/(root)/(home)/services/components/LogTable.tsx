@@ -30,6 +30,7 @@ import { api } from "@/convex/_generated/api";
 import { useCurrentUser } from "@/app/(auth)/features/auth/api/user-current";
 import { format } from "date-fns";
 import { Chip, ChipProps } from "@heroui/chip";
+import { toast } from "sonner";
 
 const anomalyColumns = [
   { uid: "ip", name: "IP", sortable: true },
@@ -107,12 +108,6 @@ const httpMethods = [
   "TRACE",
 ];
 
-type Props = {
-  reportData: Doc<"logInformation">[];
-  loadMore: (numItems: number) => void;
-  status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
-};
-
 type FilterState = Selection;
 
 const INITIAL_VISIBLE_COLUMNS = [
@@ -121,11 +116,7 @@ const INITIAL_VISIBLE_COLUMNS = [
   "method",
   "url",
   "statusCode",
-  "size",
-  "referrer",
-  "user_agent",
-  "hour",
-  "anomaly",
+  "actions",
 ];
 
 export function capitalize(s: string) {
@@ -143,6 +134,7 @@ export default function LogTable() {
     { userId: user.data?._id },
     { initialNumItems: 10 }
   );
+  console.log(reportData);
   
 
   const [filterValue, setFilterValue] = React.useState("");
@@ -259,11 +251,16 @@ export default function LogTable() {
           return format(new Date(cellValue as string), "yyyy-MM-dd HH:mm:ss");
         case "statusCode":
           return (
-            <Chip className="capitalize" size="sm" variant="flat" color={anomaly.statusCode ? httpStatusColorMap[String(anomaly.statusCode) as keyof typeof httpStatusColorMap] as ChipProps["color"] : "default"}>
+            <>
+            {!cellValue ? (<Chip className="capitalize" size="sm" variant="flat" color="default">N/A</Chip>) : (
+
+              <Chip className="capitalize" size="sm" variant="flat" color={anomaly.statusCode ? httpStatusColorMap[anomaly.statusCode.toString()] : "default"}>
               {cellValue}
             </Chip>
+            )}
+            </>
           );
-        case "action":
+        case "actions":
           return (
             <div className="relative flex justify-end items-center gap-2">
               <Dropdown>
@@ -279,6 +276,19 @@ export default function LogTable() {
                 </DropdownMenu>
               </Dropdown>
             </div>
+          );
+        case "ip": 
+          return (
+            <Button className="hover:underline text-start truncate w-32 hover:text-blue-600" variant="light"
+              onClick={() => {
+                //copy to clipboard
+                navigator.clipboard.writeText(cellValue as string).then(() => {
+                  toast.success("IP copied to clipboard");
+                });
+              }}
+            >
+              {cellValue}
+            </Button>
           );
         default:
           return cellValue;
@@ -508,7 +518,8 @@ export default function LogTable() {
       {sortedItems.length === 0 ? (
         <TableBody emptyContent={"No rows to display."}>{[]}</TableBody>
       ) : (
-        <TableBody items={sortedItems}>
+        <TableBody items={sortedItems}
+        >
           {(item: AnomalyDetail) => (
             <TableRow key={item._id}>
               {(columnKey) => (

@@ -20,6 +20,7 @@ import { usePathname } from "next/navigation";
 import { Spinner } from "@heroui/spinner";
 import { Chip } from "@heroui/chip";
 import { Avatar } from "@heroui/react";
+import { cn } from "@/lib/utils";
 
 export default function NavBar() {
   const pathName = usePathname();
@@ -43,12 +44,17 @@ export default function NavBar() {
           "data-[active=true]:after:right-0",
           "data-[active=true]:after:h-[2px]",
           "data-[active=true]:after:rounded-[2px]",
-          "data-[active=true]:after:bg-blue-500",
+          "data-[active=true]:after:bg-cyan-400",
+          "data-[active=true]:after:shadow-[1px_1px_14px_1px_#15dffa]",
+          "text-white",
         ],
+        base: ["backdrop-blur-sm", "bg-white/30"],
       }}
     >
       <NavbarBrand>
-        <Image src={"/icons/logo.png"} width={200} height={200} alt="Logo" />
+        {/* <Image src={"/icons/logo.png"} width={200} height={200} alt="Logo" /> */}
+        <p className=" text-3xl font-bold">Web</p>
+        <p className=" text-3xl text-cyan-400 font-bold">plu+</p>
       </NavbarBrand>
       <NavbarContent className="hidden sm:flex gap-9" justify="center">
         <NavbarItem isActive={pathName === "/"}>
@@ -109,18 +115,12 @@ export default function NavBar() {
                     <div className="flex flex-col justify-center">
                       <div className="flex gap-1 items-center">
                         <p className="font-bold">{`${data.firstName} ${data.lastName}`}</p>
-                        <Chip
-                          color={
-                            data.subscriptionType === "free"
-                              ? "default"
-                              : "warning"
-                          }
-                          size="sm"
-                        >
-                          {data.subscriptionType === "free" ? "Free" : "Pro"}
-                        </Chip>
+                        <p className={cn("text-[9px] rounded-full px-2",
+                          data.subscriptionType !== "free" ? "bg-[#facc15] shadow-[1px_1px_18px_1px_#facc15]" : " border border-white")}>
+                          {data.subscriptionType === "free" ? "Free" : "Premium"}
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-500">{data.email}</p>
+                      <p className="text-xs text-gray-50">{data.email}</p>
                     </div>
                   </div>
                 </DropdownTrigger>

@@ -97,7 +97,7 @@ const PurchasePlanPage = () => {
         </p>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan) => (
-            <Card key={plan.name} className="flex flex-col">
+            <Card key={plan.name} className="flex flex-col backdrop-blur-sm bg-white/20">
               <CardHeader>
                 <CardTitle>{plan.name}</CardTitle>
                 <CardDescription>{plan.description}</CardDescription>
@@ -115,12 +115,12 @@ const PurchasePlanPage = () => {
               </CardContent>
               <CardFooter>
                 <Button
-                  className="w-full bg-gradient-to-b from-cyan-600 to-sky-400"
+                  className="w-full bg-cyan-500 shadow-[1px_1px_14px_1px_#15dffa]"
                   onClick={() => handlePurchase(plan.name)}
-                  // disabled={
-                  //   isLoading ||
-                  //   userSubscription?.subscriptionType === "premium"
-                  // }
+                  disabled={
+                    isLoading ||
+                    userSubscription?.subscriptionType === "premium"
+                  }
                 >
                   {plan.name === "Enterprise" ? "Contact Sales" : "Upgrade Now"}
                 </Button>

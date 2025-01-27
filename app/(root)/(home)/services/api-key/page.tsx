@@ -26,17 +26,17 @@ export default function ApiKeyPage() {
   if (subscriptionType?.subscriptionType !== "premium") {
     return (
       <div className="m-8">
-        <Card>
+        <Card className="backdrop-blur-sm bg-white/20 text-white">
           <CardHeader>
             <CardTitle>Upgrade to Premium</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-white">
               Upgrade to a premium subscription to generate an API key
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/services/purchase-plans">
             <Button
-              className="bg-gradient-to-b from-cyan-600 to-sky-400 text-white"
+              className="bg-cyan-500 shadow-[1px_1px_14px_1px_#15dffa] text-white"
             >
               Upgrade to Premium
             </Button>
@@ -72,10 +72,10 @@ export default function ApiKeyPage() {
       />
       <div className="space-y-6 m-8">
         <h1 className="text-3xl font-bold">API Key Management</h1>
-        <Card>
+        <Card className="backdrop-blur-sm bg-white/20 text-white">
           <CardHeader>
             <CardTitle>Your API Key</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-white">
               Use this key to authenticate your API requests
             </CardDescription>
           </CardHeader>
@@ -87,10 +87,10 @@ export default function ApiKeyPage() {
                   "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 }
                 readOnly
+                className="text-white bg-transparent border-white"
               />
               <Button
-                className="bg-gradient-to-b from-cyan-600 to-sky-400 text-white"
-                variant="outline"
+                className="bg-cyan-500 shadow-[1px_1px_14px_1px_#15dffa] text-white"
                 disabled={isPending}
                 onClick={() => {
                   navigator.clipboard.writeText(
@@ -106,17 +106,17 @@ export default function ApiKeyPage() {
           </CardContent>
           <CardFooter>
             <Button
-              className="bg-gradient-to-b from-cyan-600 to-sky-400 text-white"
+              className="bg-cyan-500 shadow-[1px_1px_14px_1px_#15dffa] text-white"
               onClick={() => setIsDialogOpen(true)}
             >
               Regenerate API Key
             </Button>
           </CardFooter>
         </Card>
-        <Card>
+        <Card className="backdrop-blur-sm bg-white/20 text-white">
           <CardHeader>
             <CardTitle>API Usage</CardTitle>
-            <CardDescription>Your current API usage and limits</CardDescription>
+            <CardDescription className="text-white">Your current API usage and limits</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

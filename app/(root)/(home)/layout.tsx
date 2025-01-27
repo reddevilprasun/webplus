@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const layoutRoot = ({children}: {children :ReactNode}) => {
   return (
-    <main>
+    <main className='dark bg-[#1E2656] text-white'>
       <NavBar/>
       {children}
     </main>
