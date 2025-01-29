@@ -1,5 +1,6 @@
 import { Shield, AlertCircle, History } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 const services = [
   {
@@ -46,7 +47,9 @@ export function Services() {
 
       <div className="mt-16 text-center">
         <Button size="lg" className="group bg-cyan-400 shadow-[1px_1px_14px_1px_#15dffa] text-lg font-semibold text-gray-900 hover:bg-cyan-500">
+          <Link href={"/services/purchase-plans"}>
           Upgrade to Premium
+          </Link>
           <svg
             className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
             fill="none"

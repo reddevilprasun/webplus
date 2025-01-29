@@ -91,7 +91,7 @@ export default function NavBar() {
         )}
         {!data && !isLoading ? (
           <NavbarItem>
-            <Button>
+            <Button className="bg-cyan-400 shadow-[1px_1px_14px_1px_#15dffa]">
               <Link href="/sign-up" passHref>
                 Sign Up
               </Link>

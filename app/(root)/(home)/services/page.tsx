@@ -105,7 +105,7 @@ export default function LandingPage() {
               application&apos;s performance.
             </p>
             <div className="mt-8">
-              <Link href="/dashboard/purchase-plans">
+              <Link href="/services/purchase-plans">
                 <Button
                   size="lg"
                   className="text-lg px-8 py-3 bg-cyan-500 shadow-[1px_1px_14px_1px_#15dffa]"

@@ -4,7 +4,9 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import { useGetUserSubscriptionType } from "@/app/(root)/features/getUserSubscriptionStatus"
 
 const initialBlockedIPs = [
   { id: 1, ip: "192.168.1.1", reason: "Suspicious activity", blockedAt: "2025-01-20T15:30:00Z" },
@@ -15,6 +17,31 @@ export default function IPBlockingPage() {
   const [blockedIPs, setBlockedIPs] = useState(initialBlockedIPs)
   const [newIP, setNewIP] = useState("")
   const [reason, setReason] = useState("")
+  
+  const { data: subscriptionType } = useGetUserSubscriptionType()
+  if (subscriptionType?.subscriptionType !== "premium") {
+    return (
+      <div className="m-8">
+        <Card className="backdrop-blur-sm bg-white/20 text-white">
+          <CardHeader>
+            <CardTitle>Upgrade to Premium</CardTitle>
+            <CardDescription className="text-white">
+              Upgrade to a premium subscription to generate an API key
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/services/purchase-plans">
+            <Button
+              className="bg-cyan-500 shadow-[1px_1px_14px_1px_#15dffa] text-white"
+            >
+              Upgrade to Premium
+            </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   const handleAddIP = () => {
     if (newIP && reason) {
