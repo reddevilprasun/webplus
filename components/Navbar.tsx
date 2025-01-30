@@ -116,8 +116,8 @@ export default function NavBar() {
                       <div className="flex gap-1 items-center">
                         <p className="font-bold">{`${data.firstName} ${data.lastName}`}</p>
                         <p className={cn("text-[9px] rounded-full px-2",
-                          data.subscriptionType !== "free" ? "bg-[#facc15] shadow-[1px_1px_18px_1px_#facc15]" : " border border-white")}>
-                          {data.subscriptionType === "free" ? "Free" : "Premium"}
+                          data.subscriptionType === "premium"  ? "bg-[#facc15] shadow-[1px_1px_18px_1px_#facc15]" : " border border-white")}>
+                          {data.subscriptionType === "premium" ? "Premium" : "free"}
                         </p>
                       </div>
                       <p className="text-xs text-gray-50">{data.email}</p>
