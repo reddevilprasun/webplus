@@ -108,7 +108,7 @@ export default function NavBar() {
                       src={data.image}
                       showFallback
                       color={
-                        data.subscriptionType === "free" ? "default" : "warning"
+                        data.subscriptionType === "premium" ? "secondary" : "default"
                       }
                       isBordered
                     />
@@ -117,7 +117,7 @@ export default function NavBar() {
                         <p className="font-bold">{`${data.firstName} ${data.lastName}`}</p>
                         <p className={cn("text-[9px] rounded-full px-2",
                           data.subscriptionType === "premium"  ? "bg-[#facc15] shadow-[1px_1px_18px_1px_#facc15]" : " border border-white")}>
-                          {data.subscriptionType === "premium" ? "Premium" : "free"}
+                          {data.subscriptionType === "premium" ? "Premium" : "Free"}
                         </p>
                       </div>
                       <p className="text-xs text-gray-50">{data.email}</p>
