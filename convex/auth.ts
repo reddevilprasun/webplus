@@ -15,8 +15,6 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           firstName: githubProfile.name ? githubProfile.name.split(" ")[0] : "",
           lastName: githubProfile.name ? githubProfile.name.split(" ")[1] : "",
           image: githubProfile.avatar_url,
-          userRole: "user",
-          subscriptionType: "free",
         };
       }
     }),
@@ -28,8 +26,6 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           firstName: googleProfile.given_name,
           lastName: googleProfile.family_name,
           image: googleProfile.picture,
-          userRole: "user",
-          subscriptionType: "free",
         };
       }
     }),
@@ -42,8 +38,6 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           email: params.email as string,
           firstName: params.firstName as string,
           lastName: params.lastName as string,
-          userRole: "user",
-          subscriptionType: "free",
         };
       }
     })
