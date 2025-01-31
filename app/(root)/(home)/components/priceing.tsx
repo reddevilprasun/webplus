@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export interface PlanFeature {
   text: string;
@@ -95,6 +96,7 @@ const plans: Plan[] = [
 ];
 
 export function Pricing() {
+  const router = useRouter();
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>(
     {}
   );
@@ -195,6 +197,9 @@ export function Pricing() {
 
                   "bg-gray-950 text-white hover:bg-gray-900"
                 )}
+                onClick={() => {
+                  router.push("/services/purchase-plans");
+                }}
               >
                 {plan.name === "Enterprise" ? "Contact Sales" : "Get Started"}
               </Button>
