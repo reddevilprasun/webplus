@@ -29,7 +29,7 @@ export interface Plan {
 const plans: Plan[] = [
   {
     name: "Basic",
-    price: "₹999",
+    price: "₹799",
     description: "For small businesses and startups",
     color: "bg-blue-500",
     features: [
